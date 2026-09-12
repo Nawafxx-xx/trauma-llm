@@ -5,6 +5,7 @@ os.environ["MKL_NUM_THREADS"] = "1"
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
+import urllib.request
 
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
@@ -14,6 +15,30 @@ embeddings = HuggingFaceEmbeddings(
     model_name="sentence-transformers/all-MiniLM-L6-v2"
 )
 print("Embeddings loaded successfully.")
+
+
+FAISS_FOLDER = "index_faiss"
+
+FAISS_URL = "https://github.com/Nawafxx-xx/trauma-llm/releases/download/v1.0-index/index.faiss"
+PKL_URL = "https://github.com/Nawafxx-xx/trauma-llm/releases/download/v1.0-index/index.pkl"
+
+def ensure_faiss_index():
+    os.makedirs(FAISS_FOLDER, exist_ok=True)
+
+    if not os.path.exists("index_faiss/index.faiss"):
+        urllib.request.urlretrieve(
+            FAISS_URL,
+            "index_faiss/index.faiss"
+        )
+
+    if not os.path.exists("index_faiss/index.pkl"):
+        urllib.request.urlretrieve(
+            PKL_URL,
+            "index_faiss/index.pkl"
+        )
+
+ensure_faiss_index()
+
 vector_store = FAISS.load_local(
     "index_faiss",
     embeddings,
