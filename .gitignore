@@ -1,0 +1,6 @@
+index_faiss/
+faiss_index/
+.env
+.venv/
+__pycache__/
+.DS_Store
