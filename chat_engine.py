@@ -1,4 +1,4 @@
-from langchain_google_genai import ChatGoogleGenerativeAI
+
 from dotenv import load_dotenv
 from langchain_core.chat_history import InMemoryChatMessageHistory
 from langchain_core.messages import HumanMessage, AIMessage
