@@ -7,13 +7,110 @@ os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 import urllib.request
 
-from langchain_huggingface import HuggingFaceEmbeddings
+import numpy as np
+import onnxruntime as ort
+
+from tokenizers import Tokenizer
+from huggingface_hub import hf_hub_download
+from langchain_core.embeddings import Embeddings
 from langchain_community.vectorstores import FAISS
 
+class MiniLMONNXEmbeddings(Embeddings):
+    def __init__(self):
+        model_path = hf_hub_download(
+            repo_id="sentence-transformers/all-MiniLM-L6-v2",
+            filename="onnx/model.onnx"
+        )
 
-embeddings = HuggingFaceEmbeddings(
-    model_name="sentence-transformers/all-MiniLM-L6-v2"
-)
+        tokenizer_path = hf_hub_download(
+            repo_id="sentence-transformers/all-MiniLM-L6-v2",
+            filename="tokenizer.json"
+        )
+
+        self.tokenizer = Tokenizer.from_file(tokenizer_path)
+
+        self.tokenizer.enable_padding()
+        self.tokenizer.enable_truncation(max_length=256)
+
+        self.session = ort.InferenceSession(model_path)
+
+    def _embed(self, texts):
+        encodings = self.tokenizer.encode_batch(texts)
+
+        input_ids = np.array(
+            [encoding.ids for encoding in encodings],
+            dtype=np.int64
+        )
+
+        attention_mask = np.array(
+            [encoding.attention_mask for encoding in encodings],
+            dtype=np.int64
+        )
+
+        token_type_ids = np.array(
+            [encoding.type_ids for encoding in encodings],
+            dtype=np.int64
+        )
+
+        outputs = self.session.run(
+            None,
+            {
+                "input_ids": input_ids,
+                "attention_mask": attention_mask,
+                "token_type_ids": token_type_ids
+            }
+        )
+
+        token_embeddings = outputs[0]
+
+        mask = attention_mask[..., None]
+
+        summed_embeddings = np.sum(
+            token_embeddings * mask,
+            axis=1
+        )
+
+        token_counts = np.sum(
+            mask,
+            axis=1
+        )
+
+        token_counts = np.clip(
+            token_counts,
+            a_min=1e-9,
+            a_max=None
+        )
+
+        sentence_embeddings = (
+            summed_embeddings / token_counts
+        )
+
+        norms = np.linalg.norm(
+            sentence_embeddings,
+            axis=1,
+            keepdims=True
+        )
+
+        norms = np.clip(
+            norms,
+            a_min=1e-12,
+            a_max=None
+        )
+
+        sentence_embeddings = (
+            sentence_embeddings / norms
+        )
+
+        return sentence_embeddings.tolist()
+
+    def embed_documents(self, texts):
+        return self._embed(texts)
+
+    def embed_query(self, text):
+        return self._embed([text])[0]
+
+
+embeddings = MiniLMONNXEmbeddings()
 print("Embeddings loaded successfully.")
 
 
