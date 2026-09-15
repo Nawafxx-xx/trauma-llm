@@ -7,7 +7,7 @@ langchain-core==1.6.2
 langchain-community==0.4.2
 langchain-groq==1.1.3
 
-faiss-cpu==1.15.0
+qdrant-client
 
 onnxruntime==1.24.4
 huggingface-hub==1.31.0
