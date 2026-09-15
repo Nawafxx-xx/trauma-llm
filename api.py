@@ -15,9 +15,8 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "http://localhost:5173",
-        # Add your deployed frontend URL here later
-        # Example:
-        # "https://grounded.vercel.app",
+        "https://grounded-poeajmkww-nawafalsharani-1520s-projects.vercel.app",
+
     ],
     allow_credentials=True,
     allow_methods=["*"],
