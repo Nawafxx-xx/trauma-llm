@@ -195,8 +195,21 @@ def generate_response(
         "message": message
     })
 
-    response = llm.invoke(formatted_prompt) + f"\n\n Without rag: {llm.invoke(f"message: {message} history: {langchain_history}")}"
+    response = llm.invoke(formatted_prompt) 
+    no_rag_response = llm.invoke(
+    f"""
+Conversation history:
+{langchain_history}
+
+Current message:
+{message}
+
+Answer the user naturally.
+"""
+).content
 
 
-    return response.content
+
+    return (f"With RAG:\n{response}"
+    f"\n\nWithout RAG:\n{no_rag_response}")
     
