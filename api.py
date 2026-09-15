@@ -1,22 +1,70 @@
-from pydantic import BaseModel
+from typing import Literal
+
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+
 from chat_engine import generate_response
 
+
 app = FastAPI()
-@app.get("/")
-def home():
-    return {"message": "Trauma LLM API is running"}
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:5173",
+        # Add your deployed frontend URL here later
+        # Example:
+        # "https://grounded.vercel.app",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+class HistoryMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
+
 
 class ChatRequest(BaseModel):
+    client_id: str
+    name: str
     message: str
-    session_id: str
+    history: list[HistoryMessage] = []
+
 
 class ChatResponse(BaseModel):
     response: str
 
+
+@app.get("/")
+def home():
+    return {
+        "message": "Grounded API is running"
+    }
+
+
 @app.post("/chat", response_model=ChatResponse)
 def chat(request: ChatRequest):
-    answer = generate_response(request.message,request.session_id)
-    return {"response": answer}
-    
 
+    history = [
+        {
+            "role": item.role,
+            "content": item.content
+        }
+        for item in request.history
+    ]
+
+    answer = generate_response(
+        message=request.message,
+        history=history,
+        name=request.name
+    )
+
+    return {
+        "response": answer
+    }

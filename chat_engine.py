@@ -1,6 +1,5 @@
 
 from dotenv import load_dotenv
-from langchain_core.chat_history import InMemoryChatMessageHistory
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from rag import retrieve_context
@@ -8,11 +7,8 @@ from langchain_groq import ChatGroq
 load_dotenv()
 
 
-chat_histories = {}
-def get_chat_history(session_id: str):
-    if session_id not in chat_histories:
-        chat_histories[session_id] = InMemoryChatMessageHistory()
-    return chat_histories[session_id]
+
+
 
 
 llm = ChatGroq(
@@ -41,20 +37,41 @@ Retrieved context:
 
     ("human", "{message}")
 ])
-def generate_response(message: str, session_id: str) -> str:
-    chat_history = get_chat_history(session_id)
-    
+
+def convert_history(history):
+    messages = []
+
+    for item in history:
+        if item["role"] == "user":
+            messages.append(
+                HumanMessage(content=item["content"])
+            )
+
+        elif item["role"] == "assistant":
+            messages.append(
+                AIMessage(content=item["content"])
+            )
+
+    return messages
+
+def generate_response(
+    message: str,
+    history: list,
+    name: str
+) -> str:
+
+    langchain_history = convert_history(history)
+
     context = retrieve_context(message)
+
     formatted_prompt = prompt.invoke({
-    "context": context,
-    "history":  chat_history.messages,
-    "message": message
-     })
-    
+        "name": name,
+        "context": context,
+        "history": langchain_history,
+        "message": message
+    })
+
     response = llm.invoke(formatted_prompt)
-    answer = str(response.content)
-    with_without=f" Rag: {answer}. \n without {llm.invoke(message).content}"
-    chat_history.add_message(HumanMessage(content=message))
-    chat_history.add_message(AIMessage(content=answer))
-    return with_without
+
+    return response.content
     
