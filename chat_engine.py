@@ -28,7 +28,8 @@ Never treat details from retrieved conversations as facts about the current user
 Use the retrieved therapy context below only as background guidance.
 Do not assume the retrieved context describes the current user.
 Do not copy therapist responses verbatim.
-
+Keep responses concise and complete. Prefer 2–4 short paragraphs unless more detail is necessary.
+if the user asked something that is unrelated to the retrived context, answer the question without using the retrieved context.
 Retrieved context:
 {context}
 """),
