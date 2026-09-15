@@ -3,11 +3,27 @@ from typing import Literal
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-
+from fastapi import Request
 from chat_engine import generate_response
 
 
+
 app = FastAPI()
+
+@app.middleware("http")
+async def debug_requests(request: Request, call_next):
+    print("ORIGIN:", request.headers.get("origin"))
+    print(
+        "REQUEST METHOD:",
+        request.headers.get("access-control-request-method")
+    )
+    print(
+        "REQUEST HEADERS:",
+        request.headers.get("access-control-request-headers")
+    )
+
+    response = await call_next(request)
+    return response
 
 
 app.add_middleware(
