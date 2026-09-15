@@ -31,6 +31,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "https://grounded-web-lovat.vercel.app",
+        "https://grounded-poeajmkww-nawafalsharani-1520s-projects.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
